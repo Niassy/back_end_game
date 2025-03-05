@@ -1,4 +1,10 @@
 const express = require('express');
+
+const cors = require('cors');
+app.use(cors({
+    origin: "*"  // Allows requests from any origin (for testing)
+}));
+
 const http = require('http');
 const socketIo = require('socket.io');
 
@@ -28,5 +34,3 @@ server.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
 });
 
-const cors = require('cors');
-app.use(cors());
