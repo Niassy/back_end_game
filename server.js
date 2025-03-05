@@ -1,36 +1,40 @@
 const express = require('express');
-
-const cors = require('cors');
-app.use(cors({
-    origin: "*"  // Allows requests from any origin (for testing)
-}));
-
 const http = require('http');
 const socketIo = require('socket.io');
+const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+    cors: {
+        origin: "https://back-end-game-1.onrender.com", // Allow only your frontend to access
+        methods: ["GET", "POST"]
+    }
+});
 
-// Serve static files (HTML, CSS, JS) from the "front_end" directory
+// Enable CORS for Express
+app.use(cors({
+    origin: "https://back-end-game-1.onrender.com" // Update this with your frontend URL
+}));
+
+// Serve static files from the frontend folder
 app.use(express.static('front_end'));
 
-// Setup socket connection
+// WebSocket connection
 io.on('connection', (socket) => {
-    console.log('a user connected');
-    
-    // Handle incoming messages
+    console.log('A user connected');
+
     socket.on('chat message', (msg) => {
-        io.emit('chat message', msg); // Broadcast to all clients
+        io.emit('chat message', msg); // Broadcast message to all users
     });
 
     socket.on('disconnect', () => {
-        console.log('user disconnected');
+        console.log('A user disconnected');
     });
 });
 
 // Start the server
-server.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
-
