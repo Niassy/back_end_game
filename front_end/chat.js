@@ -1,4 +1,7 @@
-const socket = io();
+//const socket = io();
+
+const socket = io("https://back-end-game.onrender.com/"); // Replace with the backend URL from Render
+
 let username = prompt("Enter your username:");
 let roomId = prompt("Enter room ID:") || "room123"; // Default room if not specified
 
