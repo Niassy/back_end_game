@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phaser Chat</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: black;
+        }
+        #chat-container {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            width: 300px;
+            height: 30px;
+            font-size: 16px;
+        }
+        button {
+            height: 35px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <input id="messageInput" type="text" placeholder="Type a message...">
+        <button id="sendButton">Send</button>
+    </div>
+    <script src="chat.js"></script>
+</body>
+</html>
