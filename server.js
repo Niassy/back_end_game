@@ -7,29 +7,44 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "https://back-end-game-1.onrender.com", // Allow only your frontend to access
+        origin: "https://back-end-game-1.onrender.com", // Allow only your frontend
         methods: ["GET", "POST"]
     }
 });
 
 // Enable CORS for Express
 app.use(cors({
-    origin: "https://back-end-game-1.onrender.com" // Update this with your frontend URL
+    origin: "https://back-end-game-1.onrender.com"
 }));
 
 // Serve static files from the frontend folder
 app.use(express.static('front_end'));
 
-// WebSocket connection
+// Store connected users
+let users = {};
+
 io.on('connection', (socket) => {
     console.log('A user connected');
 
-    socket.on('chat message', (msg) => {
-        io.emit('chat message', msg); // Broadcast message to all users
+    // Handle new user joining
+    socket.on('set username', (username) => {
+        users[socket.id] = username;
+        io.emit('user joined', `${username} has joined the chat`);
     });
 
+    // Handle incoming chat messages
+    socket.on('chat message', (msg) => {
+        const username = users[socket.id] || "Anonymous";
+        io.emit('chat message', { username, message: msg });
+    });
+
+    // Handle user disconnecting
     socket.on('disconnect', () => {
-        console.log('A user disconnected');
+        const username = users[socket.id];
+        if (username) {
+            io.emit('user left', `${username} has left the chat`);
+            delete users[socket.id]; // Remove user from list
+        }
     });
 });
 
