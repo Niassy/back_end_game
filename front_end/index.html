@@ -3,112 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phaser Game with Chat</title>
+    <title>Guess the Image Game with Chat</title>
+    <script src="phaser.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script> 
     <style>
         body {
-            margin: 0;
-            overflow: hidden;
+            text-align: center;
+            font-family: Arial, sans-serif;
         }
-        #chat-box {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-        }
-        #messages {
-            list-style-type: none;
-            padding: 0;
-            max-height: 200px;
-            overflow-y: auto;
-            margin: 0;
-        }
-        #message-input {
-            width: 80%;
-            padding: 5px;
-        }
-        #chat-form {
+        #game-container {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            align-items: center;
+        }
+        #input-container {
+            margin-top: 10px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        #message {
+            font-size: 18px;
+            font-weight: bold;
+            color: green;
+            margin-top: 10px;
+        }
+        #chat-container {
+            margin-top: 20px;
+            width: 300px;
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: left;
+            background: #f9f9f9;
+            overflow-y: auto;
+            height: 200px;
+        }
+        #chat-messages {
+            list-style: none;
+            padding: 0;
         }
     </style>
 </head>
 <body>
-    <div id="chat-box">
-        <ul id="messages"></ul>
-        <form id="chat-form">
-            <input type="text" id="message-input" placeholder="Type a message" />
-            <button type="submit">Send</button>
-        </form>
+    <div id="game-container">
+        <div id="phaser-game"></div>
+        <div id="input-container">
+            <input type="text" id="guessInput" placeholder="Enter the name">
+            <button onclick="checkAnswer()">Check Answer</button>
+        </div>
+        <div id="message"></div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.min.js"></script>
-    <script>
-        const socket = io("https://back-end-game.onrender.com"); // Replace with your backend URL
 
-        // Prompt for the username
-        const username = prompt("Enter your username:");
+    <!-- Chat Section -->
+    <div id="chat-container">
+        <h3>Chat</h3>
+        <ul id="chat-messages"></ul>
+        <input type="text" id="chatInput" placeholder="Type a message">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        let game;
+        let correctAnswer = "";
+        let pos = 0;
+        let username = "";  // Variable to store username
+
+        // const socket = io("https://back-end-game.onrender.com"); // Replace with your backend URL
+        const socket = io("https://back-end-game.onrender.com", {
+            transports: ["websocket", "polling"]
+        });
+
+        // List of images and their correct names
+        const images = [
+            { name: "lion", path: "LION.jpg" },
+            { name: "tortue", path: "TORTUE.jpg" },
+            { name: "antilope", path: "ANTILOPE.jpg" },
+            { name: "giraffe", path: "GIRAFE.jpg" },
+            { name: "elephant", path: "ELEPHANT.jpg" },
+            { name: "cameleon", path: "CAMELEON.jpg" },
+            { name: "rhinoceros", path: "RHINOCEROS.jpg" },
+            { name: "flamant", path: "FLAMANT.jpg" },
+            { name: "zebre", path: "ZEBRE.jpg" }
+        ];
+
+        // Prompt for the username and emit it to the server
+        username = prompt("Enter your username:");
         socket.emit('set username', username);
 
-        // Phaser Game Configuration
+        // Phaser game configuration
         const config = {
             type: Phaser.AUTO,
             width: 800,
             height: 600,
             scene: {
-                preload: function() {
-                    this.load.image('bg', 'LION.jpg'); // Replace with your own assets
-                },
-                create: function() {
-                    // Create your Phaser game content here (background, sprites, etc.)
-                    this.add.image(400, 300, 'bg'); // Example background
-                },
-                update: function() {
-                    // Update logic for your game
-                }
+                preload: preload,
+                create: create
             }
         };
 
-        const game = new Phaser.Game(config);
+        game = new Phaser.Game(config);
 
-        // Handle form submission for chat messages
-        document.getElementById('chat-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const input = document.getElementById('message-input');
-            if (input.value) {
-                socket.emit('chat message', input.value);  // Send chat message to server
-                input.value = '';  // Clear input after sending
+        function preload() {
+            // Load all images
+            images.forEach(img => {
+                this.load.image(img.name, img.path);
+            });
+        }
+
+        function create() {
+            // Pick a random image
+            pickRandomImage(this);
+        }
+
+        function pickRandomImage(scene) {
+            let selectedImage = images[pos];
+            correctAnswer = selectedImage.name; // Store the correct answer
+
+            // Remove any existing image
+            if (scene.image) scene.image.destroy();
+
+            // Display new image
+            scene.image = scene.add.image(400, 300, selectedImage.name);
+            scene.image.setScale(0.5);
+
+            pos++;
+            if (pos > images.length - 1) pos = 0;
+        }
+
+        function checkAnswer() {
+            let userAnswer = document.getElementById("guessInput").value.trim().toLowerCase();
+            let messageDiv = document.getElementById("message");
+
+            if (userAnswer === correctAnswer) {
+                messageDiv.style.color = "green";
+                messageDiv.innerText = "✅ Correct! Loading new image...";
+
+                setTimeout(() => {
+                    messageDiv.innerText = "";
+                    let scene = game.scene.scenes[0];
+                    pickRandomImage(scene);
+                    document.getElementById("guessInput").value = ""; // Clear input
+                }, 1000);
+            } else {
+                messageDiv.style.color = "red";
+                messageDiv.innerText = "❌ Wrong! Try again.";
             }
-        });
+        }
 
-        // Display messages when received
-        socket.on('chat message', (data) => {
-            const messages = document.getElementById('messages');
-            const messageElement = document.createElement('li');
-            messageElement.textContent = `${data.username}: ${data.message}`;
-            messages.appendChild(messageElement);
-        });
+        // ==============================
+        // 🔥 Chat Functionality (Fixes Missing Messages)
+        // ==============================
 
-        // Show when a user joins
-        socket.on('user joined', (msg) => {
-            const messages = document.getElementById('messages');
-            const messageElement = document.createElement('li');
-            messageElement.textContent = msg;
-            messageElement.style.color = "green";  // Highlight join messages
-            messages.appendChild(messageElement);
-        });
+        // Send a message
+        function sendMessage() {
+            const chatInput = document.getElementById("chatInput");
+            const message = chatInput.value.trim();
 
-        // Show when a user leaves
-        socket.on('user left', (msg) => {
-            const messages = document.getElementById('messages');
-            const messageElement = document.createElement('li');
-            messageElement.textContent = msg;
-            messageElement.style.color = "red";  // Highlight leave messages
-            messages.appendChild(messageElement);
-        });
+            if (message !== "") {
+                const chatMessage = `${username}: ${message}`;
+                console.log("Sending message:", chatMessage); // Debug log
+                socket.emit("chatMessage", chatMessage);
+                chatInput.value = ""; // Clear input
+            }
+        }
 
+        // Receive messages
+        socket.on("chatMessage", (msg) => {
+            console.log("Received message:", msg); // Debug log
+
+            const chatMessages = document.getElementById("chat-messages");
+            const newMessage = document.createElement("li");
+            newMessage.textContent = msg;
+            chatMessages.appendChild(newMessage);
+
+            // Auto-scroll chat
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
     </script>
 </body>
 </html>
