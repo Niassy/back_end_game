@@ -146,26 +146,32 @@
         // ==============================
         // 🔥 Chat Functionality (Fixes Missing Messages)
         // ==============================
+        
+// Send a message
+function sendMessage() {
+    const chatInput = document.getElementById("chatInput");
+    const message = chatInput.value.trim();
 
-        function sendMessage() {
-            const chatInput = document.getElementById("chatInput");
-            const message = chatInput.value.trim();
-            if (message !== "") {
-                socket.emit("chatMessage", message);
-                chatInput.value = ""; // Clear input after sending
-            }
-        }
+    if (message !== "") {
+        console.log("Sending message:", message); // Debug log
+        socket.emit("chatMessage", message);
+        chatInput.value = ""; // Clear input
+    }
+}
 
-        // Receive messages from server
-        socket.on("chatMessage", (msg) => {
-            const chatMessages = document.getElementById("chat-messages");
-            const newMessage = document.createElement("li");
-            newMessage.textContent = msg;
-            chatMessages.appendChild(newMessage);
-            
-            // Auto-scroll chat to the latest message
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        });
+// Receive messages
+socket.on("chatMessage", (msg) => {
+    console.log("Received message:", msg); // Debug log
+
+    const chatMessages = document.getElementById("chat-messages");
+    const newMessage = document.createElement("li");
+    newMessage.textContent = msg;
+    chatMessages.appendChild(newMessage);
+
+    // Auto-scroll chat
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+        
     </script>
 </body>
 </html>
