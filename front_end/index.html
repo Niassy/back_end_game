@@ -68,7 +68,11 @@
         let game;
         let correctAnswer = "";
         let pos = 0;
-        const socket = io("https://back-end-game.onrender.com"); // Replace with your backend URL
+        //const socket = io("https://back-end-game.onrender.com"); // Replace with your backend URL
+
+        const socket = io("https://back-end-game.onrender.com", {
+    transports: ["websocket", "polling"]
+});
 
         // List of images and their correct names
         const images = [
