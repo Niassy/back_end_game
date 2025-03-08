@@ -155,8 +155,8 @@
             if (scene.image) scene.image.destroy();
 
             // Display new image
-            scene.image = scene.add.image(400, 300, selectedImage.name);
-            scene.image.setScale(0.5);
+            scene.image = scene.add.image(0, 0, selectedImage.name);
+            scene.image.setScale(0.25);
 
             pos++;
             if (pos > images.length - 1) pos = 0;
