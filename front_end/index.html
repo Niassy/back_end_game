@@ -66,8 +66,8 @@
         let game;
         let correctAnswer = "";
         var pos = 0;
-        const socket = io(); // Connect to the Socket.io server
-
+        const socket = io("https://back-end-game.onrender.com"); 
+        
         // List of images and their correct names
         const images = [
             { name: "lion", path: "LION.jpg" },
