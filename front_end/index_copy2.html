@@ -1,1 +1,181 @@
-ggg
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Image Game with Chat</title>
+    <script src="phaser.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script> 
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #input-container {
+            margin-top: 10px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        #message {
+            font-size: 18px;
+            font-weight: bold;
+            color: green;
+            margin-top: 10px;
+        }
+        #chat-container {
+            margin-top: 20px;
+            width: 300px;
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: left;
+            background: #f9f9f9;
+            overflow-y: auto;
+            height: 200px;
+        }
+        #chat-messages {
+            list-style: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="phaser-game"></div>
+        <div id="input-container">
+            <input type="text" id="guessInput" placeholder="Enter the name">
+            <button onclick="checkAnswer()">Check Answer</button>
+        </div>
+        <div id="message"></div>
+    </div>
+
+    <!-- Chat Section -->
+    <div id="chat-container">
+        <h3>Chat</h3>
+        <ul id="chat-messages"></ul>
+        <input type="text" id="chatInput" placeholder="Type a message">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        let game;
+        let correctAnswer = "";
+        let pos = 0;
+        //const socket = io("https://back-end-game.onrender.com"); // Replace with your backend URL
+
+        const socket = io("https://back-end-game.onrender.com", {
+    transports: ["websocket", "polling"]
+});
+
+        // List of images and their correct names
+        const images = [
+            { name: "lion", path: "LION.jpg" },
+            { name: "tortue", path: "TORTUE.jpg" },
+            { name: "antilope", path: "ANTILOPE.jpg" },
+            { name: "giraffe", path: "GIRAFE.jpg" },
+            { name: "elephant", path: "ELEPHANT.jpg" },
+            { name: "cameleon", path: "CAMELEON.jpg" },
+            { name: "rhinoceros", path: "RHINOCEROS.jpg" },
+            { name: "flamant", path: "FLAMANT.jpg" },
+            { name: "zebre", path: "ZEBRE.jpg" }
+        ];
+
+        // Phaser game configuration
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            scene: {
+                preload: preload,
+                create: create
+            }
+        };
+
+        game = new Phaser.Game(config);
+
+        function preload() {
+            // Load all images
+            images.forEach(img => {
+                this.load.image(img.name, img.path);
+            });
+        }
+
+        function create() {
+            // Pick a random image
+            pickRandomImage(this);
+        }
+
+        function pickRandomImage(scene) {
+            let selectedImage = images[pos];
+            correctAnswer = selectedImage.name; // Store the correct answer
+
+            // Remove any existing image
+            if (scene.image) scene.image.destroy();
+
+            // Display new image
+            scene.image = scene.add.image(400, 300, selectedImage.name);
+            scene.image.setScale(0.5);
+
+            pos++;
+            if (pos > images.length - 1) pos = 0;
+        }
+
+        function checkAnswer() {
+            let userAnswer = document.getElementById("guessInput").value.trim().toLowerCase();
+            let messageDiv = document.getElementById("message");
+
+            if (userAnswer === correctAnswer) {
+                messageDiv.style.color = "green";
+                messageDiv.innerText = "✅ Correct! Loading new image...";
+
+                setTimeout(() => {
+                    messageDiv.innerText = "";
+                    let scene = game.scene.scenes[0];
+                    pickRandomImage(scene);
+                    document.getElementById("guessInput").value = ""; // Clear input
+                }, 1000);
+            } else {
+                messageDiv.style.color = "red";
+                messageDiv.innerText = "❌ Wrong! Try again.";
+            }
+        }
+
+        // ==============================
+        // 🔥 Chat Functionality (Fixes Missing Messages)
+        // ==============================
+        
+// Send a message
+function sendMessage() {
+    const chatInput = document.getElementById("chatInput");
+    const message = chatInput.value.trim();
+
+    if (message !== "") {
+        console.log("Sending message:", message); // Debug log
+        socket.emit("chatMessage", message);
+        chatInput.value = ""; // Clear input
+    }
+}
+
+// Receive messages
+socket.on("chatMessage", (msg) => {
+    console.log("Received message:", msg); // Debug log
+
+    const chatMessages = document.getElementById("chat-messages");
+    const newMessage = document.createElement("li");
+    newMessage.textContent = msg;
+    chatMessages.appendChild(newMessage);
+
+    // Auto-scroll chat
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+        
+    </script>
+</body>
+</html>
