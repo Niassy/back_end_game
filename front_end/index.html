@@ -6,43 +6,34 @@
     <title>Guess the Image Game with Chat</title>
     <script src="phaser.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script> 
-    <style>
+      <style>
         body {
-            text-align: center;
-            font-family: Arial, sans-serif;
+            margin: 0;
+            overflow: hidden;
         }
-        #game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #input-container {
-            margin-top: 10px;
-        }
-        input, button {
+        #chat-box {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
             padding: 10px;
-            font-size: 16px;
-            margin: 5px;
         }
-        #message {
-            font-size: 18px;
-            font-weight: bold;
-            color: green;
-            margin-top: 10px;
-        }
-        #chat-container {
-            margin-top: 20px;
-            width: 300px;
-            border: 1px solid #000;
-            padding: 10px;
-            text-align: left;
-            background: #f9f9f9;
-            overflow-y: auto;
-            height: 200px;
-        }
-        #chat-messages {
-            list-style: none;
+        #messages {
+            list-style-type: none;
             padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 0;
+        }
+        #message-input {
+            width: 80%;
+            padding: 5px;
+        }
+        #chat-form {
+            display: flex;
+            justify-content: space-between;
         }
     </style>
 </head>
@@ -56,12 +47,13 @@
         <div id="message"></div>
     </div>
 
-    <!-- Chat Section -->
-    <div id="chat-container">
-        <h3>Chat</h3>
-        <ul id="chat-messages"></ul>
-        <input type="text" id="chatInput" placeholder="Type a message">
-        <button onclick="sendMessage()">Send</button>
+
+    <div id="chat-box">
+        <ul id="messages"></ul>
+        <form id="chat-form">
+            <input type="text" id="message-input" placeholder="Type a message" />
+            <button type="submit">Send</button>
+        </form>
     </div>
 
     <script>
@@ -105,6 +97,44 @@
 
         game = new Phaser.Game(config);
 
+        
+        // Handle form submission for chat messages
+        document.getElementById('chat-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            if (input.value) {
+                socket.emit('chat message', input.value);  // Send chat message to server
+                input.value = '';  // Clear input after sending
+            }
+        });
+
+        // Display messages when received
+        socket.on('chat message', (data) => {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('li');
+            messageElement.textContent = `${data.username}: ${data.message}`;
+            messages.appendChild(messageElement);
+        });
+
+        // Show when a user joins
+        socket.on('user joined', (msg) => {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('li');
+            messageElement.textContent = msg;
+            messageElement.style.color = "green";  // Highlight join messages
+            messages.appendChild(messageElement);
+        });
+
+        // Show when a user leaves
+        socket.on('user left', (msg) => {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('li');
+            messageElement.textContent = msg;
+            messageElement.style.color = "red";  // Highlight leave messages
+            messages.appendChild(messageElement);
+        });
+
+        
         function preload() {
             // Load all images
             images.forEach(img => {
