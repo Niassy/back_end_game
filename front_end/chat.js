@@ -1,50 +1,41 @@
-//const socket = io();
+const socket = io("https://back-end-game.onrender.com"); // Use your backend URL
 
-const socket = io("https://back-end-game.onrender.com/"); // Replace with the backend URL from Render
+// Ask for the username
+const username = prompt("Enter your username:");
+socket.emit('set username', username);
 
-let username = prompt("Enter your username:");
-let roomId = prompt("Enter room ID:") || "room123"; // Default room if not specified
-
-socket.emit('joinRoom', { username, roomId });
-
-class ChatScene extends Phaser.Scene {
-    constructor() {
-        super({ key: 'ChatScene' });
+// Handle form submission for chat messages
+document.getElementById('chat-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('message-input');
+    if (input.value) {
+        socket.emit('chat message', input.value);
+        input.value = ''; // Clear input after sending
     }
+});
 
-    create() {
-        this.add.text(20, 20, `Room: ${roomId}`, { fontSize: '24px', fill: '#fff' });
+// Display messages
+socket.on('chat message', (data) => {
+    const messages = document.getElementById('messages');
+    const messageElement = document.createElement('li');
+    messageElement.textContent = `${data.username}: ${data.message}`;
+    messages.appendChild(messageElement);
+});
 
-        this.chatMessages = this.add.text(20, 60, '', { fontSize: '20px', fill: '#fff', wordWrap: { width: 760 } });
+// Show when a user joins
+socket.on('user joined', (msg) => {
+    const messages = document.getElementById('messages');
+    const messageElement = document.createElement('li');
+    messageElement.textContent = msg;
+    messageElement.style.color = "green"; // Highlight join messages
+    messages.appendChild(messageElement);
+});
 
-        // Get input elements from the DOM
-        this.messageInput = document.getElementById("messageInput");
-        this.sendButton = document.getElementById("sendButton");
-
-        this.sendButton.addEventListener("click", () => this.sendMessage());
-        this.messageInput.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") this.sendMessage();
-        });
-
-        socket.on('message', (data) => {
-            this.chatMessages.text += `\n${data.username}: ${data.message}`;
-        });
-    }
-
-    sendMessage() {
-        const message = this.messageInput.value;
-        if (message.trim() !== "") {
-            socket.emit('chatMessage', { username, roomId, message });
-            this.messageInput.value = ""; // Clear input field
-        }
-    }
-}
-
-const config = {
-    type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    scene: ChatScene
-};
-
-new Phaser.Game(config);
+// Show when a user leaves
+socket.on('user left', (msg) => {
+    const messages = document.getElementById('messages');
+    const messageElement = document.createElement('li');
+    messageElement.textContent = msg;
+    messageElement.style.color = "red"; // Highlight leave messages
+    messages.appendChild(messageElement);
+});
