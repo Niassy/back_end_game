@@ -3,15 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phaser Chat</title>
-    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
-    <script defer src="chat.js"></script>
+    <title>Guess the Image Game with Chat</title>
+    <script src="phaser.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #input-container {
+            margin-top: 10px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        #message {
+            font-size: 18px;
+            font-weight: bold;
+            color: green;
+            margin-top: 10px;
+        }
+        #chat-container {
+            margin-top: 20px;
+            width: 400px;
+            text-align: left;
+        }
+        #chat-messages {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 5px;
+            background: #f9f9f9;
+        }
+    </style>
 </head>
 <body>
-    <ul id="messages"></ul>
-    <form id="chat-form">
-        <input id="message-input" autocomplete="off" placeholder="Type a message..." />
-        <button type="submit">Send</button>
-    </form>
+    <div id="game-container">
+        <div id="phaser-game"></div>
+        <div id="input-container">
+            <input type="text" id="guessInput" placeholder="Enter the name">
+            <button onclick="checkAnswer()">Check Answer</button>
+        </div>
+        <div id="message"></div>
+    </div>
+
+    <!-- Chat System -->
+    <div id="chat-container">
+        <h3>Chat</h3>
+        <div id="chat-messages"></div>
+        <input type="text" id="chatInput" placeholder="Type a message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        let game;
+        let correctAnswer = "";
+        var pos = 0;
+        const socket = io(); // Connect to the Socket.io server
+
+        // List of images and their correct names
+        const images = [
+            { name: "lion", path: "LION.jpg" },
+            { name: "tortue", path: "TORTUE.jpg" },
+            { name: "antilope", path: "ANTILOPE.jpg" },
+            { name: "giraffe", path: "GIRAFE.jpg" },
+            { name: "elephant", path: "ELEPHANT.jpg" },
+            { name: "cameleon", path: "CAMELEON.jpg" },
+            { name: "rhinoceros", path: "RHINOCEROS.jpg" },
+            { name: "flamant", path: "FLAMANT.jpg" },
+            { name: "zebre", path: "ZEBRE.jpg" }
+        ];
+
+        // Phaser game configuration
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            scene: {
+                preload: preload,
+                create: create
+            }
+        };
+
+        game = new Phaser.Game(config);
+
+        function preload() {
+            images.forEach(img => {
+                this.load.image(img.name, img.path);
+            });
+        }
+
+        function create() {
+            pickRandomImage(this);
+        }
+
+        function pickRandomImage(scene) {
+            let selectedImage = images[pos];
+            correctAnswer = selectedImage.name;
+
+            if (scene.image) scene.image.destroy();
+            scene.image = scene.add.image(400, 300, selectedImage.name);
+            scene.image.setScale(0.5);
+
+            pos += 1;
+            if (pos > images.length - 1) pos = 0;
+        }
+
+        function checkAnswer() {
+            let userAnswer = document.getElementById("guessInput").value.trim().toLowerCase();
+            let messageDiv = document.getElementById("message");
+
+            if (userAnswer === correctAnswer) {
+                messageDiv.style.color = "green";
+                messageDiv.innerText = "✅ Correct! Loading new image...";
+
+                setTimeout(() => {
+                    messageDiv.innerText = "";
+                    let scene = game.scene.scenes[0];
+                    pickRandomImage(scene);
+                    document.getElementById("guessInput").value = "";
+                }, 1000);
+            } else {
+                messageDiv.style.color = "red";
+                messageDiv.innerText = "❌ Wrong! Try again.";
+            }
+        }
+
+        // 🎮 Chat Functionality 🎮
+
+        function sendMessage() {
+            let chatInput = document.getElementById("chatInput");
+            let message = chatInput.value.trim();
+
+            if (message !== "") {
+                socket.emit("chatMessage", message);
+                chatInput.value = ""; // Clear input after sending
+            }
+        }
+
+        socket.on("chatMessage", (message) => {
+            let chatMessages = document.getElementById("chat-messages");
+            let messageElement = document.createElement("p");
+            messageElement.innerText = message;
+            chatMessages.appendChild(messageElement);
+        });
+
+    </script>
 </body>
 </html>
