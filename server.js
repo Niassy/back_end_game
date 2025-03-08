@@ -35,6 +35,7 @@ io.on('connection', (socket) => {
     // Handle incoming chat messages
     socket.on('chat message', (msg) => {
         const username = users[socket.id] || "Anonymous";
+        console.log("Received message:", msg);
         io.emit('chat message', { username, message: msg });
     });
 
