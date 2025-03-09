@@ -41,7 +41,7 @@
     <div id="game-container">
         <div id="phaser-game"></div>
         <div id="input-container">
-            <input type="text" id="guessInput" placeholder="Enter the name">
+            <input type="text" id="guessInput" placeholder="Saisir le nom de l animal">
             <button onclick="checkAnswer()">Check Answer</button>
         </div>
         <div id="message"></div>
@@ -51,8 +51,8 @@
     <div id="chat-box">
         <ul id="messages"></ul>
         <form id="chat-form">
-            <input type="text" id="message-input" placeholder="Type a message" />
-            <button type="submit">Send</button>
+            <input type="text" id="message-input" placeholder="Saisir le nom de l animal " />
+            <button type="submit">Envoyer</button>
         </form>
     </div>
 
@@ -81,7 +81,7 @@
         ];
 
         // Prompt for the username and emit it to the server
-        username = prompt("Enter your username:");
+        username = prompt("Saisir un pseudo:");
         socket.emit('set username', username);
 
         // Phaser game configuration
