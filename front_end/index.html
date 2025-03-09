@@ -87,8 +87,8 @@
         // Phaser game configuration
         const config = {
             type: Phaser.AUTO,
-            width: 400,
-            height: 300,
+            width: 640,
+            height: 480,
             scene: {
                 preload: preload,
                 create: create
@@ -145,6 +145,20 @@
         function create() {
             // Pick a random image
             pickRandomImage(this);
+
+            // Add text to the game screen
+            this.add.text(20, 20, "Quel est cet animal!", {
+            font: "24px Arial",
+            fill: "#ffffff",
+            fontWeight: "bold"
+            });
+
+            // Another example: Show the username at the top-right
+            this.add.text(300, 20, `Joueur: ${username}`, {
+            font: "20px Arial",
+            fill: "#ffcc00",
+            fontWeight: "bold"
+        });
         }
 
         function pickRandomImage(scene) {
@@ -155,7 +169,7 @@
             if (scene.image) scene.image.destroy();
 
             // Display new image
-            scene.image = scene.add.image(200, 150, selectedImage.name);
+            scene.image = scene.add.image(200, 200, selectedImage.name);
             scene.image.setScale(0.5);
 
             pos++;
